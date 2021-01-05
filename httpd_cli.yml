@@ -1,0 +1,69 @@
+- hosts: 192.168.0.105
+  vars_files:
+  - vars.yml
+  tasks:     
+
+    - name: "Creating Directory For Mounting"
+      file:
+        state: directory
+        path: "{{ dvd_dir }}"
+
+    - name: "Mounting...."
+      mount:
+        src: "/dev/cdrom"
+        fstype: iso9660
+        state: mounted
+        path: "{{ dvd_dir }}"
+
+    - name: "Yum repo AppStream"
+      yum_repository:
+        name: "dvd1"
+        description: "AppStream"
+        baseurl: "{{ dvd_dir }}/AppStream"
+        gpgcheck: no
+
+    - name: "Yum repo BaseOS"
+      yum_repository:
+        name: "dvd2"
+        description: "BaseOS"
+        baseurl: "{{ dvd_dir }}/BaseOS"
+        gpgcheck: no
+
+    - name: "Install httpd"
+      package:
+        name: "httpd"
+        state: present
+
+    - name: "Start httpd services"
+      service: 
+        name: "httpd"
+        state: started
+
+    - name: "Copying Configuration File"
+      template:
+        src: "/root/ansible-ws/httpd/httpc.conf"
+        dest: "/etc/httpd/conf.d/httpc.conf" 
+      notify: Restart Service
+
+    - name: "Enabling Firewall"
+      firewalld:
+        port: "{{ port_no }}/tcp"
+        state: enabled
+        permanent: yes
+        immediate: yes
+
+    - name: "New Document Root Directory"
+      file:
+        state: directory
+        path: "{{ doc_root }}"
+
+    - name: "Copying content to document Root"
+      copy:
+        content: "TASK 11.3 COMPLETED SUCCESSFULLY"
+        dest: "{{ doc_root }}/index.html"
+
+  handlers:
+    - name: "Restart Service"
+      service:
+        name: "httpd"
+        state: restarted
