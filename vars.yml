@@ -1,0 +1,4 @@
+port_no: "8080"
+dvd_dir: "/dvd1"
+doc_root: "/var/www/first"
+
